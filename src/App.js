@@ -16,74 +16,55 @@ const sizes = {
 };
 
 const Plane = () => {
-  const highlighter = useRef();
-  const mouse = useRef(new THREE.Vector2());
-  const raycaster = useRef(new THREE.Raycaster());
+  const thisScene = useRef();
+  const highlighter = useRef(null);
+  const mousePosition = new THREE.Vector2();
+  const raycaster = new THREE.Raycaster();
   let intersects;
 
-  const onMouseMove = (e) => {
-    mouse.current.x = (e.clientX / sizes.width) * 2 - 1;
-    mouse.current.y = -(e.clientY / sizes.height) * 2 + 1;
-    console.log(mouse.current);
-    console.log(Math.floor(mouse.current.x * 1000));
-    console.log(Math.floor(mouse.current.y * 1000));
-    intersects = raycaster.current.intersectObjects(Canvas.children);
+  window.addEventListener("mousemove", (e) => {
+    mousePosition.x = (e.clientX / sizes.width) * 2 - 1;
+    mousePosition.y = -(e.clientY / sizes.height) * 2 + 1;
+    console.log(Math.floor(mousePosition.x * 1000));
+    console.log(Math.floor(mousePosition.y * 1000));
+    intersects = raycaster.intersectObjects(thisScene.current.children);
+    console.log("intersects", intersects);
     intersects.forEach((intersect) => {
       if (intersect.object.name === "ground") {
-        const lightlightPos = highlighter.current.position
+        const highlightPos = new THREE.Vector3()
           .copy(intersect.point)
           .floor()
           .addScalar(0.5);
-        highlighter.current.position.set(lightlightPos.x, lightlightPos.z, 0);
+        console.log("highlightPos", highlightPos);
+        highlighter.current.position.set(
+          mousePosition.x * 10,
+          mousePosition.y * 10,
+          0
+        );
+        console.log("highlighter", highlighter.current.position);
       }
     });
-  };
-
-  useFrame(() => {
-    highlighter.current.position.x = mouse.current.x;
   });
 
   return (
-    <group>
-      <mesh name="ground" rotation={[-Math.PI / 2, 0, 0]}>
+    <group ref={thisScene}>
+      <mesh name="ground" position={[0, 0, 0]} rotation={[0, 0, 0]}>
         <planeBufferGeometry attach="geometry" args={[20, 20]} />
-        <gridHelper args={[20, 20]} rotation={[-Math.PI / 2, 0, 0]} />
+        <gridHelper args={[20, 20]} rotation={[Math.PI / 2, 0, 0]} />
         <meshStandardMaterial
           attach="material"
           color="white"
           side="doubleSide"
           visible={false}
         />
-
         <axesHelper args={[100]} />
       </mesh>
-      <mesh
-        ref={highlighter}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[2, 0, 0.5]}
-      >
+      <mesh ref={highlighter} position={[0, 0, 0]} rotation={[0, 0, 0]}>
         <planeBufferGeometry attach="geometry" args={[1, 1]} />
         <meshBasicMaterial attach="material" color="red" />
+        <axesHelper args={[2]} />
       </mesh>
     </group>
-  );
-};
-
-const Box = () => {
-  const [isClicked, setIsClicked] = useState(false);
-  const { scale } = useSpring({
-    scale: isClicked ? 1.5 : 1,
-    config: { mass: 5, tension: 500, friction: 80 },
-  });
-  return (
-    <animated.mesh
-      scale={scale}
-      onClick={() => setIsClicked(!isClicked)}
-      position={[0, 1, 0]}
-    >
-      <boxBufferGeometry attach="geometry" args={[1, 1, 1]} />
-      <meshStandardMaterial attach="material" color="blue" visible={false} />
-    </animated.mesh>
   );
 };
 
@@ -92,22 +73,9 @@ function App() {
     <>
       <Title>Subdivide a plane</Title>
       <Canvas shadows>
-        <group position={[0, -2, 0]}>
-          <perspectiveCamera
-            position={[0, -2, -5]}
-            rotation={[Math.PI / 6, 0, 0]}
-            fov={75}
-            aspect={sizes.aspects}
-            near={0.1}
-            far={1000}
-          >
-            <Box />
-            <Plane />
-          </perspectiveCamera>
-        </group>
+        <Plane />
         <ambientLight />
         <pointLight position={[10, 10, 10]} />
-
         <OrbitControls />
       </Canvas>
     </>
